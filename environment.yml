@@ -1,0 +1,17 @@
+name: cs7643-finalproject
+channels:
+  - defaults
+dependencies:
+  - python=3.9
+  - matplotlib
+  - tqdm
+  - jupyter
+  - pip
+  - pip:
+    - torch
+    - torchtext
+    - notebook
+    - numpy
+    - spacy
+    - Resemblyzer
+    - audio-separator[cpu]
