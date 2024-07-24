@@ -25,6 +25,7 @@ import random
 import torch
 import torch.nn as nn
 import torch.optim as optim
+from utils import get_activation_function
 
 
 class Decoder(nn.Module):
@@ -34,12 +35,9 @@ class Decoder(nn.Module):
     def __init__(
             self, 
             input_size=320, 
-            cnn_set1_num_layers = 3,
-            cnn_set1_output_channels=512, 
-            cnn_set1_activation_function="relu",
-            cnn_set2_num_layers = 5,
-            cnn_set2_output_channels=512,
-            cnn_set2_activation_function="tanh",
+            cnn_num_layers = 3,
+            cnn_output_channels=512, 
+            cnn_activation_function="relu",
             cnn_kernel_size=5,
             cnn_stride=1,
             cnn_padding=2,
@@ -51,12 +49,9 @@ class Decoder(nn.Module):
         super(Decoder, self).__init__()
 
         self.input_size = input_size
-        self.cnn_set1_num_layers = cnn_set1_num_layers
-        self.cnn_set1_output_channels = cnn_set1_output_channels
-        self.cnn_set1_activation_function = cnn_set1_activation_function
-        self.cnn_set2_num_layers = cnn_set2_num_layers
-        self.cnn_set2_output_channels = cnn_set2_output_channels
-        self.cnn_set2_activation_function = cnn_set2_activation_function
+        self.cnn_num_layers = cnn_num_layers
+        self.cnn_output_channels = cnn_output_channels
+        self.cnn_activation_function = cnn_activation_function
         self.cnn_kernel_size = cnn_kernel_size
         self.cnn_stride = cnn_stride
         self.cnn_padding = cnn_padding
@@ -70,16 +65,16 @@ class Decoder(nn.Module):
         self.cnn_set_1 = []
         self.cnn_set_1.append(nn.Conv1d(
             in_channels=self.input_size, 
-            out_channels=self.cnn_set1_output_channels,
+            out_channels=self.cnn_output_channels,
             kernel_size=self.cnn_kernel_size,
             stride=self.cnn_stride,
             padding=self.cnn_padding,
         ))
 
-        for _ in range(self.cnn_set1_num_layers - 1):
+        for _ in range(self.cnn_num_layers - 1):
             self.cnn_set_1.append(nn.Conv1d(
-                in_channels=self.cnn_set1_output_channels, 
-                out_channels=self.cnn_set1_output_channels,
+                in_channels=self.cnn_output_channels, 
+                out_channels=self.cnn_output_channels,
                 kernel_size=self.cnn_kernel_size,
                 stride=self.cnn_stride,
                 padding=self.cnn_padding,
@@ -99,47 +94,9 @@ class Decoder(nn.Module):
             out_channels=self.output_size,
             kernel_size=1
         )
-
-        # CNN Set 2 (PostNet)
-        self.cnn_set_2 = []
-        self.cnn_set_2.append(nn.Conv1d(
-            in_channels=self.output_size, 
-            out_channels=self.cnn_set2_output_channels,
-            kernel_size=self.cnn_kernel_size,
-            stride=self.cnn_stride,
-            padding=self.cnn_padding,
-        ))
-
-        for _ in range(self.cnn_set2_num_layers - 2):
-            self.cnn_set_2.append(nn.Conv1d(
-                in_channels=self.cnn_set2_output_channels, 
-                out_channels=self.cnn_set2_output_channels,
-                kernel_size=self.cnn_kernel_size,
-                stride=self.cnn_stride,
-                padding=self.cnn_padding,
-            ))
-
-        self.cnn_set_2.append(nn.Conv1d(
-            in_channels=self.cnn_set2_output_channels, 
-            out_channels=self.output_size,
-            kernel_size=self.cnn_kernel_size,
-            stride=self.cnn_stride,
-            padding=self.cnn_padding,
-        ))
-
-        def get_activation_function(activation_function):
-            if activation_function == "relu":
-                return nn.ReLU()
-            elif activation_function == "tanh":
-                return nn.Tanh()
-            elif activation_function == "softmax":
-                return nn.Softmax()
-            else:
-                return nn.ReLU()
         
 
-        self.cnn_set1_activation = get_activation_function(self.cnn_set1_activation_function)
-        self.cnn_set2_activation = get_activation_function(self.cnn_set2_activation_function)
+        self.cnn_activation = get_activation_function(self.cnn_activation_function)
 
         #############################################################################
         #                              END OF YOUR CODE                             #
@@ -155,28 +112,17 @@ class Decoder(nn.Module):
         outputs = input # (N, Input Channels, 1)
 
         # CNN Set 1
-        for i in range(self.cnn_set1_num_layers):
-            outputs = self.cnn_set1_activation(self.cnn_set_1[i](outputs)) # (N, CNN Set 1 Output Channels, 1)
+        for i in range(self.cnn_num_layers):
+            outputs = self.cnn_activation(self.cnn_set_1[i](outputs)) # (N, CNN Set 1 Output Channels, 1)
 
         # LSTM
-        outputs = outputs.transpose(1, 2) # (N, 1, CNN Set 1 Output Channels)
+        outputs = outputs.transpose(1, 2) # (N, 1, Output Channels)
         outputs, _= self.lstm(outputs) # (N, 1, LSTM Hidden Size)
         outputs = outputs.transpose(1, 2) # (N, LSTM Hidden Size, 1)
 
         # CNN 1x1
         outputs = self.conv_1x1(outputs) # (N, Output Size, 1)
-        temp = torch.clone(outputs) # to use for skip connection
-        
-        # CNN Set 2 (PostNet)
-        for i in range(self.cnn_set2_num_layers - 1):
-            outputs = self.cnn_set2_activation(self.cnn_set_2[i](outputs)) # (N, CNN Set 3 Output Channels, 1)
-
-        # Don't use activation on last layer
-        outputs = self.cnn_set_2[-1](outputs) # (N, CNN Set 3 Output Channels, 1)
-
-
-        outputs += temp # (N, Output Size, 1)
-
+    
         #############################################################################
         #                              END OF YOUR CODE                             #
         #############################################################################
