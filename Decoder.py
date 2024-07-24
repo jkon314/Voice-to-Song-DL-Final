@@ -33,10 +33,11 @@ class Decoder(nn.Module):
 
     def __init__(
             self, 
-            cnn_set1_input_channels=320, 
+            input_size=320, 
+            cnn_set1_num_layers = 3,
             cnn_set1_output_channels=512, 
-            cnn_set3_output_channels=512,
-            cnn_set4_input_channels=512,
+            cnn_set2_num_layers = 4,
+            cnn_set2_output_channels=512,
             cnn_kernel_size=5,
             cnn_stride=1,
             cnn_padding=2,
@@ -47,10 +48,11 @@ class Decoder(nn.Module):
             output_size=80):
         super(Decoder, self).__init__()
 
-        self.cnn_set1_input_channels = cnn_set1_input_channels
+        self.input_size = input_size
+        self.cnn_set1_num_layers = cnn_set1_num_layers
         self.cnn_set1_output_channels = cnn_set1_output_channels
-        self.cnn_set3_output_channels = cnn_set3_output_channels
-        self.cnn_set4_input_channels = cnn_set4_input_channels
+        self.cnn_set2_num_layers = cnn_set2_num_layers
+        self.cnn_set2_output_channels = cnn_set2_output_channels
         self.cnn_kernel_size = cnn_kernel_size
         self.cnn_stride = cnn_stride
         self.cnn_padding = cnn_padding
@@ -61,27 +63,23 @@ class Decoder(nn.Module):
         self.output_size = output_size
 
         # CNN Set 1
-        self.conv_norm_5x1_1 = nn.Conv1d(
-            in_channels=self.cnn_set1_input_channels, 
+        self.cnn_set_1 = []
+        self.cnn_set_1.append(nn.Conv1d(
+            in_channels=self.input_size, 
             out_channels=self.cnn_set1_output_channels,
             kernel_size=self.cnn_kernel_size,
             stride=self.cnn_stride,
             padding=self.cnn_padding,
-        )
-        self.conv_norm_5x1_2 = nn.Conv1d(
-            in_channels=self.cnn_set1_output_channels, 
-            out_channels=self.cnn_set1_output_channels,
-            kernel_size=self.cnn_kernel_size,
-            stride=self.cnn_stride,
-            padding=self.cnn_padding,
-        )
-        self.conv_norm_5x1_3 = nn.Conv1d(
-            in_channels=self.cnn_set1_output_channels, 
-            out_channels=self.cnn_set1_output_channels,
-            kernel_size=self.cnn_kernel_size,
-            stride=self.cnn_stride,
-            padding=self.cnn_padding,
-        )
+        ))
+
+        for _ in range(self.cnn_set1_num_layers - 1):
+            self.cnn_set_1.append(nn.Conv1d(
+                in_channels=self.cnn_set1_output_channels, 
+                out_channels=self.cnn_set1_output_channels,
+                kernel_size=self.cnn_kernel_size,
+                stride=self.cnn_stride,
+                padding=self.cnn_padding,
+            ))
 
         # LSTM Layers
         self.lstm = nn.LSTM(
@@ -91,49 +89,35 @@ class Decoder(nn.Module):
             batch_first=self.lstm_batch_first
         )
 
-        # CNN Set 2
-        self.conv_norm_1x1 = nn.Conv1d(
+        # CNN 1x1
+        self.conv_1x1 = nn.Conv1d(
             in_channels=self.lstm_hidden_size,
             out_channels=self.output_size,
             kernel_size=1
         )
 
-        # CNN Set 3
-        self.conv_norm_5x1_4 = nn.Conv1d(
+        # CNN Set 2
+        self.cnn_set_2 = []
+        self.cnn_set_2.append(nn.Conv1d(
             in_channels=self.output_size, 
-            out_channels=self.cnn_set3_output_channels,
+            out_channels=self.cnn_set2_output_channels,
             kernel_size=self.cnn_kernel_size,
             stride=self.cnn_stride,
             padding=self.cnn_padding,
-        )
+        ))
 
-        self.conv_norm_5x1_5 = nn.Conv1d(
-            in_channels=self.cnn_set3_output_channels, 
-            out_channels=self.cnn_set3_output_channels,
-            kernel_size=self.cnn_kernel_size,
-            stride=self.cnn_stride,
-            padding=self.cnn_padding,
-        )
+        for _ in range(self.cnn_set2_num_layers - 1):
+            self.cnn_set_2.append(nn.Conv1d(
+                in_channels=self.cnn_set2_output_channels, 
+                out_channels=self.cnn_set2_output_channels,
+                kernel_size=self.cnn_kernel_size,
+                stride=self.cnn_stride,
+                padding=self.cnn_padding,
+            ))
 
-        self.conv_norm_5x1_6 = nn.Conv1d(
-            in_channels=self.cnn_set3_output_channels, 
-            out_channels=self.cnn_set3_output_channels,
-            kernel_size=self.cnn_kernel_size,
-            stride=self.cnn_stride,
-            padding=self.cnn_padding,
-        )
-
-        self.conv_norm_5x1_7 = nn.Conv1d(
-            in_channels=self.cnn_set3_output_channels, 
-            out_channels=self.cnn_set3_output_channels,
-            kernel_size=self.cnn_kernel_size,
-            stride=self.cnn_stride,
-            padding=self.cnn_padding,
-        )
-
-        # CNN Set 4
-        self.conv_norm_5x1_8 = nn.Conv1d(
-            in_channels=self.cnn_set3_output_channels, 
+        # Final CNN
+        self.final_cnn = nn.Conv1d(
+            in_channels=self.cnn_set2_output_channels, 
             out_channels=self.output_size,
             kernel_size=self.cnn_kernel_size,
             stride=self.cnn_stride,
@@ -152,52 +136,30 @@ class Decoder(nn.Module):
         """ The forward pass of the decoder
             Args:
                 input (tensor): the encoded sequences of shape (N, 1). HINT: encoded does not mean from encoder!!
-                hidden (tensor): the hidden state of the previous time step from the decoder, dimensions: (1,N,decoder_hidden_size)
-                encoder_outputs (tensor): the outputs from the encoder used to implement attention, dimensions: (N,T,encoder_hidden_size)
-                attention (Boolean): If True, need to implement attention functionality
             Returns:
                 output (tensor): the output of the decoder, dimensions: (N, output_size)
-                hidden (tensor): the state coming out of the hidden unit, dimensions: (1,N,decoder_hidden_size)
-                where N is the batch size, T is the sequence length
         """
-
-        #############################################################################
-        # TODO: Implement the forward pass of the decoder.                          #
-        #       Apply the dropout to the embedding layer before you apply the       #
-        #       recurrent layer                                                     #
-        #                                                                           #
-        #       If attention is true, compute the attention probabilities and use   #
-        #       them to do a weighted sum on the encoder_outputs to determine       #
-        #       the hidden (and cell if LSTM) states that will be consumed by the   #
-        #       recurrent layer.                                                    #
-        #                                                                           #
-        #       Apply linear layer and log-softmax activation to output tensor      #
-        #       before returning it.                                                #
-        #############################################################################
         outputs = input # (N, Input Channels, 1)
 
         # CNN Set 1
-        outputs = self.relu(self.conv_norm_5x1_1(outputs)) # (N, CNN Set 1 Output Channels, 1)
-        outputs = self.relu(self.conv_norm_5x1_2(outputs)) # (N, CNN Set 1 Output Channels, 1)
-        outputs = self.relu(self.conv_norm_5x1_3(outputs)) # (N, CNN Set 1 Output Channels, 1)
+        for i in range(self.cnn_set1_num_layers):
+            outputs = self.relu(self.cnn_set_1[i](outputs)) # (N, CNN Set 1 Output Channels, 1)
 
         # LSTM
         outputs = outputs.transpose(1, 2) # (N, 1, Output Channels)
         outputs, _= self.lstm(outputs) # (N, 1, LSTM Hidden Size)
         outputs = outputs.transpose(1, 2) # (N, LSTM Hidden Size, 1)
 
-        # CNN Set 2
-        outputs = self.conv_norm_1x1(outputs) # (N, Output Size, 1)
+        # CNN 1x1
+        outputs = self.conv_1x1(outputs) # (N, Output Size, 1)
         temp = torch.clone(outputs) # to use for skip connection
         
-        # CNN Set 3
-        outputs = self.relu(self.conv_norm_5x1_4(outputs)) # (N, CNN Set 3 Output Channels, 1)
-        outputs = self.relu(self.conv_norm_5x1_5(outputs)) # (N, CNN Set 3 Output Channels, 1)
-        outputs = self.relu(self.conv_norm_5x1_6(outputs)) # (N, CNN Set 3 Output Channels, 1)
-        outputs = self.relu(self.conv_norm_5x1_7(outputs)) # (N, CNN Set 3 Output Channels, 1)
+        # CNN Set 2
+        for i in range(self.cnn_set2_num_layers):
+            outputs = self.relu(self.cnn_set_2[i](outputs)) # (N, CNN Set 3 Output Channels, 1)
 
-        # CNN Set 4
-        outputs = self.relu(self.conv_norm_5x1_8(outputs)) # (N, Output Size, 1)
+        # Final CNN
+        outputs = self.relu(self.final_cnn(outputs)) # (N, Output Size, 1)
 
         outputs += temp # (N, Output Size, 1)
 
