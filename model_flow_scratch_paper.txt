@@ -1,0 +1,11 @@
+preprocessing:
+
+
+run vocals through stft 
+run speech through resemblyzer for style embedding
+
+model should
+concat stft (256xT, T being time steps) and 256 resemblyzer vector copied to each time step (creating (256xT) embedding vector)
+
+for batched input, the shape should end up being Nx512xT, N being the number of samples and T being time steps.
+
