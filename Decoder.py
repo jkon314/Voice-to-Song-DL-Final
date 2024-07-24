@@ -20,9 +20,10 @@ class Decoder(nn.Module):
             cnn_stride=1,
             cnn_padding=2,
             lstm_input_size=512,
-            lstm_hidden_size=1024,
-            lstm_num_layers=3,
+            lstm_hidden_size=2048,
+            lstm_num_layers=2,
             lstm_batch_first=True,
+            lstm_bidirectional=True,
             output_size=80):
         super(Decoder, self).__init__()
 
@@ -37,13 +38,14 @@ class Decoder(nn.Module):
         self.lstm_hidden_size = lstm_hidden_size
         self.lstm_batch_first = lstm_batch_first
         self.lstm_num_layers = lstm_num_layers
+        self.lstm_bidirectional = lstm_bidirectional
         self.output_size = output_size
 
         # CNN Set 1
         self.cnn_set = []
         self.cnn_set.append(nn.Sequential(
             nn.Conv1d(
-                in_channels=self.lstm_hidden_size, 
+                in_channels=self.lstm_hidden_size * 2, 
                 out_channels=self.cnn_output_channels,
                 kernel_size=self.cnn_kernel_size,
                 stride=self.cnn_stride,
@@ -71,18 +73,20 @@ class Decoder(nn.Module):
             input_size=self.input_size, 
             hidden_size=self.lstm_hidden_size, 
             num_layers=1, 
-            batch_first=self.lstm_batch_first
+            batch_first=self.lstm_batch_first,
+            bidirectional=self.lstm_bidirectional
         )
 
         self.lstm2 = nn.LSTM(
             input_size=self.lstm_input_size, 
             hidden_size=self.lstm_hidden_size, 
             num_layers=self.lstm_num_layers - 1, 
-            batch_first=self.lstm_batch_first
+            batch_first=self.lstm_batch_first,
+            bidirectional=self.lstm_bidirectional
         )
 
         # Linear 1x1
-        self.linear = nn.Linear(in_features=self.lstm_hidden_size, out_features=self.output_size)
+        self.linear = nn.Linear(in_features=self.lstm_hidden_size * 2, out_features=self.output_size)
     
         self.cnn_activation = get_activation_function(self.cnn_activation_function)
 
