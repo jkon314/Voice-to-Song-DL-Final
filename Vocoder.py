@@ -1,3 +1,7 @@
+# Class 'Vocoder', which includes methods for performing the STFT, ISTFT, 
+# and Griffin-Lim algorithm, as well as a method to reconstruct 
+# the time-domain signal from a spectrogram.
+
 import torch
 import numpy as np
 
