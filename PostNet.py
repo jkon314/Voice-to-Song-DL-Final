@@ -55,21 +55,27 @@ class PostNet(nn.Module):
 
         # CNN Set 2 (PostNet)
         self.cnn_set = []
-        self.cnn_set.append(nn.Conv1d(
-            in_channels=self.input_size, 
-            out_channels=self.hidden_size,
-            kernel_size=self.cnn_kernel_size,
-            stride=self.cnn_stride,
-            padding=self.cnn_padding,
-        ))
-
-        for _ in range(self.num_layers - 2):
-            self.cnn_set.append(nn.Conv1d(
-                in_channels=self.hidden_size, 
+        self.cnn_set.append(nn.Sequential(
+            nn.Conv1d(
+                in_channels=self.input_size, 
                 out_channels=self.hidden_size,
                 kernel_size=self.cnn_kernel_size,
                 stride=self.cnn_stride,
                 padding=self.cnn_padding,
+            ),
+            nn.BatchNorm1d(self.hidden_size)
+        ))
+
+        for _ in range(self.num_layers - 2):
+            self.cnn_set.append(nn.Sequential(
+                nn.Conv1d(
+                    in_channels=self.hidden_size, 
+                    out_channels=self.hidden_size,
+                    kernel_size=self.cnn_kernel_size,
+                    stride=self.cnn_stride,
+                    padding=self.cnn_padding,
+                ),
+                nn.BatchNorm1d(self.hidden_size)
             ))
 
         self.cnn_set.append(nn.Conv1d(
@@ -79,6 +85,8 @@ class PostNet(nn.Module):
             stride=self.cnn_stride,
             padding=self.cnn_padding,
         ))
+
+        self.cnn_set = nn.ModuleList(self.cnn_set)
         
         self.activation = get_activation_function(self.activation_function)
 
