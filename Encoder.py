@@ -80,8 +80,7 @@ class Encoder(nn.Module):
 
         """
         Performs encoder foward pass
-        Parameters: spec: spectrogram of singer input
-                    style: resembylzer style encoding of speaker?
+        Parameters: concat: concatenated input of vocal spectrogram and speech style embedding duplicated T times 
         Returns: output: resulting encoded vocals
         """
         
