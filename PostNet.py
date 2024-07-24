@@ -101,14 +101,14 @@ class PostNet(nn.Module):
             Returns:
                 output (tensor): the output of the decoder, dimensions: (N, output_size)
         """
-        outputs = input # (N, Input Size, 1)
+        outputs = input # (N, Input Size, T)
         
         # CNN Set 2 (PostNet)
         for i in range(self.num_layers - 1):
-            outputs = self.activation(self.cnn_set[i](outputs)) # (N, Hidden Size, 1)
+            outputs = self.activation(self.cnn_set[i](outputs)) # (N, Hidden Size, T)
 
         # Don't use tanh on last layer
-        outputs = self.cnn_set[-1](outputs) # (N, Output Size, 1)
+        outputs = self.cnn_set[-1](outputs) # (N, Output Size, T)
 
         #############################################################################
         #                              END OF YOUR CODE                             #
