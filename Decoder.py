@@ -134,6 +134,8 @@ class Decoder(nn.Module):
                 return nn.Tanh()
             elif activation_function == "softmax":
                 return nn.Softmax()
+            else:
+                return nn.ReLU()
         
 
         self.cnn_set1_activation = get_activation_function(self.cnn_set1_activation_function)
@@ -166,8 +168,12 @@ class Decoder(nn.Module):
         temp = torch.clone(outputs) # to use for skip connection
         
         # CNN Set 2 (PostNet)
-        for i in range(self.cnn_set2_num_layers):
+        for i in range(self.cnn_set2_num_layers - 1):
             outputs = self.cnn_set2_activation(self.cnn_set_2[i](outputs)) # (N, CNN Set 3 Output Channels, 1)
+
+        # Don't use tanh on last layer
+        outputs = self.cnn_set_2[-1](outputs) # (N, CNN Set 3 Output Channels, 1)
+
 
         outputs += temp # (N, Output Size, 1)
 
