@@ -35,3 +35,12 @@ def overlay_audio(file1, file2, export_location="./", export_format="mp3", posit
     overlay.export(export_location, format="mp3")
 
 
+def combine_spec_and_style(spec,style):
+    copy = style[:,:,None] #add additional dimension to duplicate style embeddings over
+
+    style_dup = torch.repeat_interleave(copy,spec.shape[2],2)
+
+
+    concat = torch.cat((spec,style_dup),1) #concatenate the spectrogram and style to create Nx512xT tensor
+
+    return concat
