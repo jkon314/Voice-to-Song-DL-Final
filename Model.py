@@ -38,18 +38,26 @@ class Model(nn.Module):
 
         encoder_in = utils.combine_spec_and_style(spec,style)
 
-        encoder_out = self.encoder.forward(encoder_in)
+        forward, backward = self.encoder.forward(encoder_in)
 
 
         #probably do loss calc here
 
-        decoder_in = torch.cat((encoder_out,input)) #do concatenation step of model, combining original style encoding with the output of the encoder
+        f_up = torch.nn.functional.interpolate(forward,None,32,'nearest') #upsampled forward output
+        b_up = torch.nn.functional.interpolate(backward,None,32,'nearest') #upsampled backward output
+
+        style_dup = torch.repeat_interleave(style,32,2) #duplicate style embedding desired number of times
+
+        decoder_in = torch.cat((f_up,b_up,style_dup)) #do concatenation step of model, combining original style encoding with the output of the encoder
 
         decoder_out = self.decoder.forward(decoder_in)
 
         postnet_out = self.postnet.forward(decoder_out)
 
         out = self.vocoder(postnet_out)
+
+
+
         
         
 

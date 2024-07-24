@@ -105,9 +105,10 @@ class Encoder(nn.Module):
 
         fwd , back = torch.split(output,output.shape[2]//2,dim=2) #split into forward and backward components of BLSTM
 
+        
         #print(f'fwd shape: {fwd.shape} back shape: {back.shape}')
-        fwd = torch.nn.functional.interpolate(fwd,None,(self.downsamplefactor),'linear') #downsample by desired downsampling factor
-        back = torch.nn.functional.interpolate(back,None,(self.downsamplefactor),'linear')
+        fwd = torch.nn.functional.interpolate(fwd,None,(self.downsamplefactor),'nearest') #downsample by desired downsampling factor 
+        back = torch.nn.functional.interpolate(back,None,(self.downsamplefactor),'nearest')
 
 
         
