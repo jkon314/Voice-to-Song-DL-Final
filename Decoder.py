@@ -171,7 +171,7 @@ class Decoder(nn.Module):
         for i in range(self.cnn_set2_num_layers - 1):
             outputs = self.cnn_set2_activation(self.cnn_set_2[i](outputs)) # (N, CNN Set 3 Output Channels, 1)
 
-        # Don't use tanh on last layer
+        # Don't use activation on last layer
         outputs = self.cnn_set_2[-1](outputs) # (N, CNN Set 3 Output Channels, 1)
 
 
