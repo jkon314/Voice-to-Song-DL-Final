@@ -1,5 +1,14 @@
 import torch
 import torch.nn as nn
+import torchaudio as ta
 
 
-print(torch.nn.functional.interpolate(torch.tensor([[[1.1,2.1],[3.1,4.1]],[[1.1,2.1],[3.1,4.1]]]),None,0.5,'nearest'))
+vocals = ta.load('collardgreens.mp3')
+
+
+
+transform = ta.transforms.Spectrogram(510)
+
+out = transform(vocals[0])
+
+print(out.shape)
