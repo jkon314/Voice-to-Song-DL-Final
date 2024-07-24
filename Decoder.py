@@ -1,25 +1,3 @@
-"""
-S2S Decoder model.  (c) 2021 Georgia Tech
-
-Copyright 2021, Georgia Institute of Technology (Georgia Tech)
-Atlanta, Georgia 30332
-All Rights Reserved
-
-Template code for CS 7643 Deep Learning
-
-Georgia Tech asserts copyright ownership of this template and all derivative
-works, including solutions to the projects assigned in this course. Students
-and other users of this template code are advised not to share it with others
-or to make it available on publicly viewable websites including repositories
-such as Github, Bitbucket, and Gitlab.  This copyright statement should
-not be removed or edited.
-
-Sharing solutions with current or future students of CS 7643 Deep Learning is
-prohibited and subject to being investigated as a GT honor code violation.
-
------do not edit anything above this line---
-"""
-
 import random
 
 import torch
@@ -119,24 +97,24 @@ class Decoder(nn.Module):
             Returns:
                 output (tensor): the output of the decoder, dimensions: (N, output_size)
         """
-        outputs = input # (N, Input Channels, 1)
+        outputs = input # (N, Input Channels, T)
 
         # LSTM 1
-        outputs = outputs.transpose(1, 2) # (N, 1, Input Channels)
-        outputs, _= self.lstm1(outputs) # (N, 1, LSTM Hidden Size)
-        outputs = outputs.transpose(1, 2) # (N, LSTM Hidden Size, 1)
+        outputs = outputs.transpose(1, 2) # (N, T, Input Channels)
+        outputs, _= self.lstm1(outputs) # (N, T, LSTM Hidden Size)
+        outputs = outputs.transpose(1, 2) # (N, LSTM Hidden Size, T)
 
         # CNN Set 1
         for i in range(self.cnn_num_layers):
             outputs = self.cnn_activation(self.cnn_set[i](outputs)) # (N, CNN Set 1 Output Channels, 1)
 
         # LSTM 2
-        outputs = outputs.transpose(1, 2) # (N, 1, Output Channels)
-        outputs, _= self.lstm2(outputs) # (N, 1, LSTM Hidden Size)
+        outputs = outputs.transpose(1, 2) # (N, T, Output Channels)
+        outputs, _= self.lstm2(outputs) # (N, T, LSTM Hidden Size)
 
         # Linear
-        outputs = self.linear(outputs) # (N, 1, Output Size)
-        outputs = outputs.transpose(1, 2) # (N, Output Size, 1)
+        outputs = self.linear(outputs) # (N, T, Output Size)
+        outputs = outputs.transpose(1, 2) # (N, Output Size, T)
     
         #############################################################################
         #                              END OF YOUR CODE                             #
