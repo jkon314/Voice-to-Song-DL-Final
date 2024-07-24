@@ -159,7 +159,7 @@ class Decoder(nn.Module):
             outputs = self.cnn_set1_activation(self.cnn_set_1[i](outputs)) # (N, CNN Set 1 Output Channels, 1)
 
         # LSTM
-        outputs = outputs.transpose(1, 2) # (N, 1, Output Channels)
+        outputs = outputs.transpose(1, 2) # (N, 1, CNN Set 1 Output Channels)
         outputs, _= self.lstm(outputs) # (N, 1, LSTM Hidden Size)
         outputs = outputs.transpose(1, 2) # (N, LSTM Hidden Size, 1)
 
