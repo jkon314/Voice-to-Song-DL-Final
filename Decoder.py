@@ -45,7 +45,7 @@ class Decoder(nn.Module):
         self.cnn_set = []
         self.cnn_set.append(nn.Sequential(
             nn.Conv1d(
-                in_channels=self.lstm_hidden_size * 2, 
+                in_channels=self.lstm_hidden_size * 2 if self.lstm_bidirectional else self.lstm_hidden_size, 
                 out_channels=self.cnn_output_channels,
                 kernel_size=self.cnn_kernel_size,
                 stride=self.cnn_stride,
@@ -86,7 +86,10 @@ class Decoder(nn.Module):
         )
 
         # Linear 1x1
-        self.linear = nn.Linear(in_features=self.lstm_hidden_size * 2, out_features=self.output_size)
+        self.linear = nn.Linear(
+            in_features=self.lstm_hidden_size * 2 if self.lstm_bidirectional else self.lstm_hidden_size, 
+            out_features=self.output_size
+        )
     
         self.cnn_activation = get_activation_function(self.cnn_activation_function)
 
