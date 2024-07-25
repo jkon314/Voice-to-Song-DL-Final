@@ -8,6 +8,8 @@ from torch.utils.data import DataLoader
 import torch.nn.functional as F
 from tqdm import tqdm
 
+import matplotlib.pyplot as plt
+
 from pydub import AudioSegment
 from pydub.playback import play
 
@@ -133,3 +135,28 @@ def evaluate(model, dataloader, criterion, device='cpu'):
 # criterion = nn.MSELoss()  # or whatever loss function is appropriate for your task
 # total_loss, avg_loss = evaluate(model, dataloader, criterion, device='cuda' if torch.cuda.is_available() else 'cpu')
 # print(f'Total Loss: {total_loss:.4f}, Average Loss: {avg_loss:.4f}')
+
+
+def plot_curves(train_loss_history, valid_loss_history, filename):
+    '''
+    Plot learning curves with matplotlib. Training loss and validation loss are plotted in the same figure.
+    :param train_loss_history: training loss history of epochs
+    :param valid_loss_history: validation loss history of epochs
+    :param filename: filename for saving the plot
+    :return: None, save plot in the current directory
+    '''
+    epochs = range(len(train_loss_history))
+    plt.plot(epochs, train_loss_history, label='Train Loss')
+    plt.plot(epochs, valid_loss_history, label='Validation Loss')
+
+    plt.xlabel('Epochs')
+    plt.ylabel('Loss')
+    plt.legend()
+    plt.title('Training and Validation Loss Curves - ' + filename)
+    plt.savefig(filename + '.png')
+    plt.show()
+
+# Example usage:
+# Assuming train_loss_history and valid_loss_history are lists of losses
+# filename = "model_loss_curves"
+# plot_curves(train_loss_history, valid_loss_history, filename)
