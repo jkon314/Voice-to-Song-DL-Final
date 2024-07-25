@@ -3,6 +3,10 @@ import random
 import torch
 import torch.nn as nn
 import torch.optim as optim
+from torch.optim import Adam
+from torch.utils.data import DataLoader
+import torch.nn.functional as F
+from tqdm import tqdm
 
 from pydub import AudioSegment
 from pydub.playback import play
@@ -44,3 +48,52 @@ def combine_spec_and_style(spec,style):
     concat = torch.cat((spec,style_dup),1) #concatenate the spectrogram and style to create Nx512xT tensor
 
     return concat
+
+
+def train(model, dataloader, optimizer, criterion, scheduler=None, device='cpu', epochs=10):
+    model.to(device)
+    model.train()
+
+    for epoch in range(epochs):
+        total_loss = 0.0
+
+        progress_bar = tqdm(dataloader, desc=f'Epoch {epoch+1}/{epochs}', ascii=True)
+        
+        for batch_idx, data in enumerate(progress_bar):
+            # Assuming data is a tuple of (singing_spec, speech_style, target)
+            singing_spec, speech_style, target = data
+            singing_spec, speech_style, target = singing_spec.to(device), speech_style.to(device), target.to(device)
+
+            optimizer.zero_grad()
+
+            # Forward pass
+            output = model((singing_spec, speech_style))
+
+            # Compute the loss
+            loss = criterion(output, target)
+            
+            # Backward pass and optimization
+            loss.backward()
+            optimizer.step()
+            
+            # Learning rate scheduler step
+            if scheduler:
+                scheduler.step()
+            
+            # Accumulate the loss
+            total_loss += loss.item()
+            progress_bar.set_postfix(loss=loss.item())
+        
+        avg_loss = total_loss / len(dataloader)
+        print(f'Epoch {epoch+1}, Average Loss: {avg_loss:.4f}')
+
+    return model
+
+# Example usage:
+# model = Model()
+# dataloader = DataLoader(your_dataset, batch_size=32, shuffle=True)
+# optimizer = Adam(model.parameters(), lr=1e-3)
+# criterion = nn.MSELoss()  # or whatever loss function is appropriate for your task
+# train(model, dataloader, optimizer, criterion, device='cuda' if torch.cuda.is_available() else 'cpu')
+
+
