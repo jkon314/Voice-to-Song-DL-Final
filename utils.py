@@ -97,3 +97,39 @@ def train(model, dataloader, optimizer, criterion, scheduler=None, device='cpu',
 # train(model, dataloader, optimizer, criterion, device='cuda' if torch.cuda.is_available() else 'cpu')
 
 
+def evaluate(model, dataloader, criterion, device='cpu'):
+    # Set the model to evaluation mode to avoid updating weights
+    model.eval()
+    total_loss = 0.0
+
+    with torch.no_grad():
+        # Get the progress bar for evaluation
+        progress_bar = tqdm(dataloader, desc="Evaluating", ascii=True)
+
+        for batch_idx, data in enumerate(progress_bar):
+            # Assuming data is a tuple of (singing_spec, speech_style, target)
+            singing_spec, speech_style, target = data
+            singing_spec, speech_style, target = singing_spec.to(device), speech_style.to(device), target.to(device)
+
+            # Forward pass
+            output = model((singing_spec, speech_style))
+
+            # Compute the loss
+            loss = criterion(output, target)
+
+            # Accumulate the loss
+            total_loss += loss.item()
+
+            # Update the progress bar with the current batch loss
+            progress_bar.set_postfix(loss=loss.item())
+
+    # Calculate the average loss over the entire dataset
+    avg_loss = total_loss / len(dataloader)
+    return total_loss, avg_loss
+
+# Example usage:
+# model = Model()
+# dataloader = DataLoader(your_dataset, batch_size=32, shuffle=False)
+# criterion = nn.MSELoss()  # or whatever loss function is appropriate for your task
+# total_loss, avg_loss = evaluate(model, dataloader, criterion, device='cuda' if torch.cuda.is_available() else 'cpu')
+# print(f'Total Loss: {total_loss:.4f}, Average Loss: {avg_loss:.4f}')
