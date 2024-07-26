@@ -37,24 +37,37 @@ class Model(nn.Module):
         style= input[1]
 
         encoder_in = utils.combine_spec_and_style(spec,style)
-
+        
         forward, backward = self.encoder.forward(encoder_in)
-
+        print("Encoder PASSED!")
 
         #probably do loss calc here
 
         f_up = torch.nn.functional.interpolate(forward,None,32,'nearest') #upsampled forward output
         b_up = torch.nn.functional.interpolate(backward,None,32,'nearest') #upsampled backward output
 
-        style_dup = torch.repeat_interleave(style,32,2) #duplicate style embedding desired number of times
 
-        decoder_in = torch.cat((f_up,b_up,style_dup)) #do concatenation step of model, combining original style encoding with the output of the encoder
+        style = style[:,:,None]
+        style_dup = torch.repeat_interleave(style,f_up.shape[1],2) #duplicate style embedding desired number of timesteps
+        style_dup = torch.transpose(style_dup,2,1) #change shape to match upsampled encoder outputs
+
+
+
+
+        
+
+
+        decoder_in = torch.cat((f_up,b_up,style_dup),2) #do concatenation step of model, combining original style encoding with the output of the encoder
+
+        decoder_in = torch.transpose(decoder_in,1,2)
+
+        
 
         decoder_out = self.decoder.forward(decoder_in)
-
+        
         postnet_out = self.postnet.forward(decoder_out)
-
-        out = self.vocoder(postnet_out)
+        print("MODEL PASSED!")
+        return postnet_out
 
 
 

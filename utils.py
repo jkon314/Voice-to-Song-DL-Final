@@ -3,6 +3,12 @@ import random
 import torch
 import torch.nn as nn
 import torch.optim as optim
+from torch.optim import Adam
+from torch.utils.data import DataLoader
+import torch.nn.functional as F
+from tqdm import tqdm
+
+import matplotlib.pyplot as plt
 
 from pydub import AudioSegment
 from pydub.playback import play
@@ -44,3 +50,73 @@ def combine_spec_and_style(spec,style):
     concat = torch.cat((spec,style_dup),1) #concatenate the spectrogram and style to create Nx512xT tensor
 
     return concat
+
+
+def train(model, dataloader, optimizer, criterion, device='cpu'):
+    model.train()
+    total_loss = 0.0
+    progress_bar = tqdm(dataloader, desc="Training", ascii=True)
+
+    for batch_idx, data in enumerate(progress_bar):
+        singing_spec, speech_style, target = data
+        singing_spec, speech_style, target = singing_spec.to(device), speech_style.to(device), target.to(device)
+
+        optimizer.zero_grad()
+        output = model((singing_spec, speech_style))
+        loss = criterion(output, target)
+        loss.backward()
+        optimizer.step()
+
+        total_loss += loss.item()
+        progress_bar.set_postfix(loss=loss.item())
+
+    avg_loss = total_loss / len(dataloader)
+    return total_loss, avg_loss
+
+
+def evaluate(model, dataloader, criterion, device='cpu'):
+    model.eval()
+    total_loss = 0.0
+    with torch.no_grad():
+        progress_bar = tqdm(dataloader, desc="Evaluating", ascii=True)
+
+        for batch_idx, data in enumerate(progress_bar):
+            singing_spec, speech_style, target = data
+            singing_spec, speech_style, target = singing_spec.to(device), speech_style.to(device), target.to(device)
+
+            output = model((singing_spec, speech_style))
+            loss = criterion(output, target)
+            total_loss += loss.item()
+            progress_bar.set_postfix(loss=loss.item())
+
+    avg_loss = total_loss / len(dataloader)
+    return total_loss, avg_loss
+
+# Example usage:
+# model = Model()
+# dataloader = DataLoader(your_dataset, batch_size=32, shuffle=False)
+# criterion = nn.MSELoss()  # or whatever loss function is appropriate for your task
+# total_loss, avg_loss = evaluate(model, dataloader, criterion, device='cuda' if torch.cuda.is_available() else 'cpu')
+# print(f'Total Loss: {total_loss:.4f}, Average Loss: {avg_loss:.4f}')
+
+
+def plot_curves(train_loss_history, valid_loss_history, filename):
+    '''
+    Plot learning curves with matplotlib. Training loss and validation loss are plotted in the same figure.
+    :param train_loss_history: training loss history of epochs
+    :param valid_loss_history: validation loss history of epochs
+    :param filename: filename for saving the plot
+    :return: None, save plot in the current directory
+    '''
+    epochs = range(len(train_loss_history))
+    plt.plot(epochs, train_loss_history, label='Train Loss')
+    plt.plot(epochs, valid_loss_history, label='Validation Loss')
+
+    plt.xlabel('Epochs')
+    plt.ylabel('Loss')
+    plt.legend()
+    plt.title('Training and Validation Loss Curves - ' + filename)
+    plt.savefig(filename + '.png')
+    plt.show()
+
+
