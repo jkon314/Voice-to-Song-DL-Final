@@ -58,7 +58,7 @@ class Encoder(nn.Module):
             self.convs.append(
                 
                 nn.Sequential(
-                    nn.Conv1d(newInChannels,self.out_channels,self.k_size,self.stride_size,0,1,device=self.device),
+                    nn.Conv1d(newInChannels,self.out_channels,self.k_size,self.stride_size,padding=2,dilation=1,device=self.device),
                     nn.BatchNorm1d(self.out_channels,device=self.device),
                     nn.ReLU()
                     

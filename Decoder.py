@@ -24,7 +24,7 @@ class Decoder(nn.Module):
             lstm_num_layers=2,
             lstm_batch_first=True,
             lstm_bidirectional=True,
-            output_size=80):
+            output_size=256):
         super(Decoder, self).__init__()
 
         self.input_size = input_size

@@ -33,14 +33,14 @@ class PostNet(nn.Module):
 
     def __init__(
             self, 
-            input_size=80, 
+            input_size=256, 
             num_layers = 5,
             hidden_size=512,
             activation_function="tanh",
             cnn_kernel_size=5,
             cnn_stride=1,
             cnn_padding=2,
-            output_size=80):
+            output_size=256):
         super(PostNet, self).__init__()
 
         self.num_layers =num_layers

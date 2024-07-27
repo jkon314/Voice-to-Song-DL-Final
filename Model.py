@@ -37,6 +37,7 @@ class Model(nn.Module):
         style= input[1]
 
         encoder_in = utils.combine_spec_and_style(spec,style)
+        print("Encoder In: ", encoder_in.shape)
         
         forward, backward = self.encoder.forward(encoder_in)
         print("Encoder PASSED!")
@@ -45,6 +46,10 @@ class Model(nn.Module):
 
         f_up = torch.nn.functional.interpolate(forward,None,32,'nearest') #upsampled forward output
         b_up = torch.nn.functional.interpolate(backward,None,32,'nearest') #upsampled backward output
+
+        encoder_out = torch.cat((forward,backward),2)
+
+        print("Encoder Out: ", encoder_out.shape)
 
 
         style = style[:,:,None]
@@ -61,13 +66,31 @@ class Model(nn.Module):
 
         decoder_in = torch.transpose(decoder_in,1,2)
 
+        print("Decoder In: ", decoder_in.shape)
+
         
 
         decoder_out = self.decoder.forward(decoder_in)
+        print("Decoder Out: ", decoder_out.shape)
         
         postnet_out = self.postnet.forward(decoder_out)
+        print("Postnet Out: ", postnet_out.shape)
+
+        print("Style: ", style.shape)
+        encoded_postnet_in = utils.combine_spec_and_style(postnet_out,style.squeeze())
+        print("Encoded Postnet In: ", encoded_postnet_in.shape)
+
+
+
+        encoded_postnet_out_f, encoded_postnet_out_b = self.encoder.forward(encoded_postnet_in)
+        encoded_postnet_out = torch.cat((encoded_postnet_out_f,encoded_postnet_out_b),2)
+        print("Encoded Postnet Out: ", encoded_postnet_out.shape)
+
+        # encoded_postnet_out = None
+
+
         print("MODEL PASSED!")
-        return postnet_out
+        return spec, encoder_out, decoder_out, postnet_out, encoded_postnet_out
 
 
 
