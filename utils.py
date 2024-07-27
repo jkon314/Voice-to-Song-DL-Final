@@ -58,12 +58,15 @@ def train(model, dataloader, optimizer, criterion, device='cpu'):
     progress_bar = tqdm(dataloader, desc="Training", ascii=True)
 
     for batch_idx, data in enumerate(progress_bar):
-        singing_spec, speech_style, target = data
-        singing_spec, speech_style, target = singing_spec.to(device), speech_style.to(device), target.to(device)
+        #singing_spec, speech_style, target = data
+        #singing_spec, speech_style, target = singing_spec.to(device), speech_style.to(device), target.to(device)
+
+        singing_spec, speech_style = data
+        singing_spec, speech_style = singing_spec.to(device), speech_style.to(device), 
 
         optimizer.zero_grad()
-        output = model((singing_spec, speech_style))
-        loss = criterion(output, target)
+        spec, encoder_out, decoder_out, postnet_out, encoded_postnet_out = model((singing_spec, speech_style))
+        loss = criterion(spec, encoder_out, decoder_out, postnet_out, encoded_postnet_out) #edited to unpack multiple returns
         loss.backward()
         optimizer.step()
 

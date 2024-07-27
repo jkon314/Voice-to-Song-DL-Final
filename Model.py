@@ -36,6 +36,8 @@ class Model(nn.Module):
 
         style= input[1]
 
+        print(f'spec shape: {spec.shape} style shape: {style.shape}')
+
         encoder_in = utils.combine_spec_and_style(spec,style)
         print("Encoder In: ", encoder_in.shape)
         
@@ -47,6 +49,7 @@ class Model(nn.Module):
         f_up = torch.nn.functional.interpolate(forward,None,32,'nearest') #upsampled forward output
         b_up = torch.nn.functional.interpolate(backward,None,32,'nearest') #upsampled backward output
 
+        print(f'forward shape: {forward.shape} backward shape: {backward.shape}')
         encoder_out = torch.cat((forward,backward),2)
 
         print("Encoder Out: ", encoder_out.shape)
