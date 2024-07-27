@@ -73,7 +73,7 @@ class Model(nn.Module):
         decoder_out = self.decoder.forward(decoder_in)
         print("Decoder Out: ", decoder_out.shape)
         
-        postnet_out = self.postnet.forward(decoder_out)
+        postnet_out = self.postnet.forward(decoder_out) + decoder_out
         print("Postnet Out: ", postnet_out.shape)
 
         print("Style: ", style.shape)
