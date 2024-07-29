@@ -100,7 +100,7 @@ class Encoder(nn.Module):
 
         #print(f'final output of convolution shape: {output.shape}')
         output = torch.transpose(output,2,1)
-
+        self.blstm.flatten_parameters()
         output, cell = self.blstm(output) #do not use cell in this scenario
 
         fwd , back = torch.split(output,output.shape[2]//2,dim=2) #split into forward and backward components of BLSTM

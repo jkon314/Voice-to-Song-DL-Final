@@ -108,6 +108,7 @@ class Decoder(nn.Module):
 
         # LSTM 1
         outputs = outputs.transpose(1, 2) # (N, T, Input Channels)
+        self.lstm1.flatten_parameters()
         outputs, _= self.lstm1(outputs) # (N, T, LSTM Hidden Size)
         outputs = outputs.transpose(1, 2) # (N, LSTM Hidden Size, T)
 
@@ -116,6 +117,7 @@ class Decoder(nn.Module):
             outputs = self.cnn_activation(self.cnn_set[i](outputs)) # (N, CNN Set 1 Output Channels, 1)
 
         # LSTM 2
+        self.lstm2.flatten_parameters()
         outputs = outputs.transpose(1, 2) # (N, T, Output Channels)
         outputs, _= self.lstm2(outputs) # (N, T, LSTM Hidden Size)
 
