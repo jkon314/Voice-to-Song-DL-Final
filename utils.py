@@ -32,16 +32,16 @@ def criterion(input, encoder_ouput, decoder_output, postnet_output, encoded_post
     return L1 + L2 + (gamma * L3)
 
 def overlay_audio(file1, file2, export_location="./", export_format="mp3", position=0):
-    sound1 = AudioSegment.from_wav(file1)
-    sound2 = AudioSegment.from_wav(file2)
+    sound1 = AudioSegment.from_wav(file1) - 3
+    sound2 = AudioSegment.from_mp3(file2) + 6
 
-    overlay = sound1.overlay(sound2, position=position)
-
-    play(overlay)
+    overlay = sound2.overlay(sound1, position=position)
     overlay.export(export_location, format="mp3")
 
 
 def combine_spec_and_style(spec,style):
+    if len(style.shape) == 1:
+        style = style.unsqueeze(0)
     copy = style[:,:,None] #add additional dimension to duplicate style embeddings over
 
     style_dup = torch.repeat_interleave(copy,spec.shape[2],2)
